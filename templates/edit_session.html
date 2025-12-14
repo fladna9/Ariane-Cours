@@ -20,6 +20,30 @@
     <div class="card">
         <h2 style="color: #667eea; margin-bottom: 30px;">Edit Training Session</h2>
 
+        <div class="form-group">
+            <label>Current Files:</label>
+            <div style="margin-top: 10px;">
+                {% if session.files %}
+                    {% for filename in session.files %}
+                        <div style="display: flex; justify-content: space-between; align-items: center;
+                                    padding: 10px; background: #f8f9fa; border-radius: 5px; margin-bottom: 10px;">
+                            <span>📄 {{ filename }}</span>
+
+                            <form method="POST"
+                                  action="{{ url_for('delete_file', session_id=session_id, filename=filename) }}"
+                                  style="display: inline; margin: 0;"
+                                  onsubmit="return confirm('Are you sure you want to delete this file?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: #999;">No files uploaded yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
         <form id="edit-form" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
@@ -34,28 +58,6 @@
             </div>
 
             <div class="form-group">
-                <label>Current Files:</label>
-                <div style="margin-top: 10px;">
-                    {% if session.files %}
-                        {% for filename in session.files %}
-                            <div style="display: flex; justify-content: space-between; align-items: center;
-                                        padding: 10px; background: #f8f9fa; border-radius: 5px; margin-bottom: 10px;">
-                                <span>📄 {{ filename }}</span>
-                                <form id="{{ filename }}-form" method="POST" action="{{ url_for('delete_file', session_id=session_id, filename=filename) }}"
-                                      style="display: inline;"
-                                      onsubmit="return confirm('Are you sure you want to delete this file?')">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" form="{{ filename }}-form" class="btn btn-danger">Delete</button>
-                                </form>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <p style="color: #999;">No files uploaded yet.</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="form-group">
                 <label for="files">Add More Files:</label>
                 <input type="file" id="files" name="files" multiple>
                 <small style="color: #999; display: block; margin-top: 5px;">
@@ -64,7 +66,7 @@
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <button type="submit" id="edit-button" form="edit-form" class="btn btn-success">Save Changes</button>
+                <button type="submit" id="edit-button" class="btn btn-success">Save Changes</button>
                 <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>

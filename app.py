@@ -28,7 +28,13 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
 
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['DATA_FOLDER'] = 'data'
-app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500 MB max file size
+
+# NOTE:
+# - MAX_CONTENT_LENGTH limits the *entire request* size (all files combined + form data)
+# - MAX_FILE_SIZE is a per-file limit we enforce manually.
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024 * 1024  # 2GB per request (adjust as you want)
+app.config['MAX_FILE_SIZE'] = 500 * 1024 * 1024  # 500MB per file
+
 app.config['ALLOWED_EXTENSIONS'] = {'pdf', 'zip', 'ova', 'txt', 'doc', 'docx', 'ppt', 'pptx'}
 app.wsgi_app = ProxyFix(
     app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
@@ -461,10 +467,13 @@ def create_session():
                 file_size = file.tell()
                 file.seek(0)  # Reset to beginning
 
-                if file_size > app.config['MAX_CONTENT_LENGTH']:
-                    flash(f'File "{file.filename}" exceeds {app.config['MAX_CONTENT_LENGTH']}B limit', 'error')
+                if file_size > app.config['MAX_FILE_SIZE']:
+                    flash(
+                        f'File "{file.filename}" exceeds {app.config["MAX_FILE_SIZE"]} bytes limit',
+                        'error'
+                    )
                     continue
-                # Secure the filename
+
                 original_filename = file.filename
                 safe_name = secure_filename(original_filename)
 
@@ -531,6 +540,9 @@ def edit_session(session_id):
         # Handle new file uploads
         files = request.files.getlist('files')
         session_dir = os.path.join(app.config['UPLOAD_FOLDER'], str(session_id))
+        os.makedirs(session_dir, exist_ok=True)
+
+        changed = False
 
         for file in files:
             if file and file.filename:
@@ -538,9 +550,13 @@ def edit_session(session_id):
                 file_size = file.tell()
                 file.seek(0)  # Reset to beginning
 
-                if file_size > app.config['MAX_CONTENT_LENGTH']:
-                    flash(f'File "{file.filename}" exceeds {app.config['MAX_CONTENT_LENGTH']}B limit', 'error')
+                if file_size > app.config['MAX_FILE_SIZE']:
+                    flash(
+                        f'File "{file.filename}" exceeds {app.config["MAX_FILE_SIZE"]} bytes limit',
+                        'error'
+                    )
                     continue
+
                 original_filename = file.filename
                 safe_name = secure_filename(original_filename)
 
