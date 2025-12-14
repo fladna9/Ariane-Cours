@@ -17,9 +17,11 @@
                         {% if session.files %}
                             <span>📎 {{ session.files|length }} file(s)</span>
                         {% endif %}
+                    <!--
                         {% if session.student_count %}
                             <span>👥 {{ session.student_count }} students</span>
                         {% endif %}
+                    -->
                     </div>
 
                     <a href="{{ url_for('session_password', session_id=session_id) }}" class="btn btn-primary">
