@@ -14,6 +14,8 @@ import subprocess
 from datetime import datetime
 from functools import wraps
 import re
+import hashlib
+from typing import List, Dict
 
 app = Flask(__name__)
 load_dotenv()
@@ -89,6 +91,12 @@ def load_sessions():
                     training_sessions = data.get('sessions', {})
                     training_sessions = {int(k): v for k, v in training_sessions.items()}
                     session_counter = data.get('counter', 0)
+
+                    # Backward compatibility: ensure tags exist
+                    for _, s in training_sessions.items():
+                        if 'tags' not in s or not isinstance(s.get('tags'), list):
+                            s['tags'] = []
+
                     app.logger.info(f'Loaded {len(training_sessions)} sessions from storage')
     except Exception as e:
         app.logger.error(f'Error loading sessions: {str(e)}')
@@ -260,6 +268,90 @@ def login_required(f):
 
     return decorated_function
 
+_TAG_RE = re.compile(r"^[\w\- ]{1,24}$", re.UNICODE)
+
+def normalize_tag(raw: str) -> str:
+    """Normalize a tag for storage/display. Returns '' if invalid."""
+    t = (raw or "").strip()
+    if not t:
+        return ""
+    t = re.sub(r"\s+", " ", t)  # collapse spaces
+    if not _TAG_RE.match(t):
+        return ""
+    return t
+
+def parse_tags(raw: str) -> List[str]:
+    """Parse comma-separated tags into a unique, stable-ordered list."""
+    if not raw:
+        return []
+    parts = [normalize_tag(p) for p in raw.split(",")]
+    parts = [p for p in parts if p]
+
+    seen = set()
+    out: List[str] = []
+    for p in parts:
+        key = p.casefold()
+        if key not in seen:
+            seen.add(key)
+            out.append(p)
+    return out
+
+def _relative_luminance(rgb: tuple[int, int, int]) -> float:
+    # sRGB -> linear -> luminance
+    def to_linear(c: float) -> float:
+        c = c / 255.0
+        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = rgb
+    r_lin, g_lin, b_lin = to_linear(r), to_linear(g), to_linear(b)
+    return 0.2126 * r_lin + 0.7152 * g_lin + 0.0722 * b_lin
+
+def _hsl_to_rgb(h: float, s: float, l: float) -> tuple[int, int, int]:
+    # h in [0..360), s/l in [0..1]
+    c = (1 - abs(2 * l - 1)) * s
+    x = c * (1 - abs(((h / 60) % 2) - 1))
+    m = l - c / 2
+    r1 = g1 = b1 = 0.0
+    if 0 <= h < 60:
+        r1, g1, b1 = c, x, 0
+    elif 60 <= h < 120:
+        r1, g1, b1 = x, c, 0
+    elif 120 <= h < 180:
+        r1, g1, b1 = 0, c, x
+    elif 180 <= h < 240:
+        r1, g1, b1 = 0, x, c
+    elif 240 <= h < 300:
+        r1, g1, b1 = x, 0, c
+    else:
+        r1, g1, b1 = c, 0, x
+    r, g, b = (r1 + m), (g1 + m), (b1 + m)
+    return int(round(r * 255)), int(round(g * 255)), int(round(b * 255))
+
+def tag_style(tag: str) -> Dict[str, str]:
+    """
+    Deterministically map a tag name to a background + readable foreground color.
+    Returns CSS-friendly hex colors.
+    """
+    t = (tag or "").strip()
+    key = t.casefold().encode("utf-8")
+    h = int(hashlib.sha256(key).hexdigest()[:8], 16) % 360
+
+    # "Sober" palette: moderate saturation, fairly light background
+    rgb = _hsl_to_rgb(h=float(h), s=0.55, l=0.88)
+    bg = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+
+    # Pick black/white based on luminance for readability
+    lum = _relative_luminance(rgb)
+    fg = "#0f172a" if lum > 0.6 else "#ffffff"
+
+    # Subtle border a bit darker than bg
+    border_rgb = _hsl_to_rgb(h=float(h), s=0.45, l=0.78)
+    border = f"#{border_rgb[0]:02x}{border_rgb[1]:02x}{border_rgb[2]:02x}"
+
+    return {"bg": bg, "fg": fg, "border": border}
+
+@app.context_processor
+def inject_helpers():
+    return {"tag_style": tag_style}
 
 # Student Routes
 # Student Routes
@@ -440,6 +532,7 @@ def create_session():
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
+        tags = parse_tags(request.form.get('tags', ''))
 
         # Validate input
         if not title or len(title) > 200:
@@ -501,6 +594,7 @@ def create_session():
             'title': title,
             'description': description,
             'files': uploaded_files,
+            'tags': tags,
             'validated': False,
             'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'student_count': 0,
@@ -521,10 +615,12 @@ def edit_session(session_id):
         abort(404)
 
     session_data = training_sessions[session_id]
+    session_data.setdefault('tags', [])
 
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
+        tags = parse_tags(request.form.get('tags', ''))
 
         # Validate input
         if not title or len(title) > 200:
@@ -537,6 +633,7 @@ def edit_session(session_id):
 
         session_data['title'] = title
         session_data['description'] = description
+        session_data['tags'] = tags
 
         # Handle new file uploads
         files = request.files.getlist('files')
@@ -694,6 +791,7 @@ def validate_session(session_id):
               'warning')
 
     return redirect(url_for('admin_dashboard'))
+
 
 
 @app.route('/admin/session/<int:session_id>/invalidate', methods=['POST'])

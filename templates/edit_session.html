@@ -58,6 +58,12 @@
             </div>
 
             <div class="form-group">
+                <label for="tags">Tags (comma-separated):</label>
+                <input type="text" id="tags" name="tags" value="{{ session.tags|join(', ') }}"
+                       placeholder="e.g. Linux, Web, Crypto">
+            </div>
+
+            <div class="form-group">
                 <label for="files">Add More Files:</label>
                 <input type="file" id="files" name="files" multiple>
                 <small style="color: #999; display: block; margin-top: 5px;">

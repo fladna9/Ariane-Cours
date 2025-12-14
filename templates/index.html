@@ -16,7 +16,16 @@
                         <h2 class="session-card__title">{{ session.title }}</h2>
 
                         <div class="session-meta">
-                            <!--<span class="meta-pill">Created: {{ session.created_at }}</span>-->
+                            {% if session.tags %}
+                                {% for tag in session.tags %}
+                                    {% set st = tag_style(tag) %}
+                                    <span class="tag-pill"
+                                          style="background: {{ st.bg }}; color: {{ st.fg }}; border-color: {{ st.border }};">
+                                        {{ tag }}
+                                    </span>
+                                {% endfor %}
+                            {% endif %}
+
                             {% if session.files %}
                                 <span class="meta-pill">{{ session.files|length }} file(s)</span>
                             {% else %}
