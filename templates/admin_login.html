@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Login{% endblock %}
+
+{% block header_title %}Admin Login{% endblock %}
+
+{% block content %}
+    <div style="max-width: 400px; margin: 50px auto;">
+        <div class="card">
+            <h2 style="text-align: center; color: #667eea; margin-bottom: 30px;">Admin Panel</h2>
+            
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+            </form>
+
+            <div style="margin-top: 20px; text-align: center;">
+                <a href="{{ url_for('index') }}" style="color: #667eea; text-decoration: none;">
+                    ← Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

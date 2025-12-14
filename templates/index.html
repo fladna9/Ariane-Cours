@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Ariane Cours{% endblock %}
+
+{% block content %}
+    <h1>📚 Available Training Sessions</h1>
+
+    {% if sessions %}
+        <div class="session-grid">
+            {% for session_id, session in sessions.items() %}
+                <div class="session-card">
+                    <h2>{{ session.title }}</h2>
+                    <!--<p class="session-description">{{ session.description }}</p>-->
+
+                    <div class="session-meta">
+                        <span>📅 {{ session.created_at }}</span>
+                        {% if session.files %}
+                            <span>📎 {{ session.files|length }} file(s)</span>
+                        {% endif %}
+                        {% if session.student_count %}
+                            <span>👥 {{ session.student_count }} students</span>
+                        {% endif %}
+                    </div>
+
+                    <a href="{{ url_for('session_password', session_id=session_id) }}" class="btn btn-primary">
+                        🔒 Access Session
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card" style="text-align: center; padding: 60px 40px;">
+            <p style="color: #666; font-size: 18px;">No training sessions available yet.</p>
+        </div>
+    {% endif %}
+{% endblock %}

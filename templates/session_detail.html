@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ session.title }}{% endblock %}
+
+{% block content %}
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back to Sessions</a>
+    </div>
+    
+    <div class="card">
+        <h2 style="color: #667eea; margin-bottom: 15px;">{{ session.title }}</h2>
+        {% for para in session_description %}
+        <p style="color: #666; margin-bottom: 20px; font-size: 16px;">{{ para }}</p>
+        {% endfor %}
+
+        <!--
+        <div style="margin-top: 10px; padding: 10px; background: #d4edda;
+                                        border-radius: 5px; font-size: 14px;">
+            <strong>Students:</strong> {{ session.student_count }} |
+            <strong>Password:</strong>
+            <span id="pwd-{{ session_id }}" style="filter: blur(5px); cursor: pointer; user-select: none;"
+                  onclick="this.style.filter='none'; this.style.cursor='default';"
+                  title="Click to reveal">
+                <code style="background: white; padding: 2px 6px; border-radius: 3px;">
+                    {{ session.password }}
+                </code>
+            </span>
+            <small style="color: #666; margin-left: 10px;">(click to reveal)</small>
+        </div>-->
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #333;">Available Files:</h3>
+        
+        {% if session.files %}
+            <div style="display: grid; gap: 10px;">
+                {% for filename in session.files %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; 
+                                padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <span style="font-weight: 500;">📄 {{ filename }}</span>
+                        <a href="{{ url_for('download_file', session_id=session_id, filename=filename) }}" 
+                           class="btn btn-success">
+                            Download
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="color: #999;">No files available for this session.</p>
+        {% endif %}
+    </div>
+{% endblock %}

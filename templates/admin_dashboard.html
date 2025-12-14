@@ -1,0 +1,126 @@
+
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block header_title %}Admin Dashboard{% endblock %}
+
+{% block nav %}
+    <a href="{{ url_for('index') }}">Home</a>
+    <a href="{{ url_for('create_session') }}">+ New Session</a>
+    <form method="POST" action="{{ url_for('admin_logout') }}" style="display: inline; margin: 0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit">Logout</button>
+    </form>
+{% endblock %}
+
+{% block content %}
+    <h2 style="margin-bottom: 20px; color: #333;">Training Sessions Management</h2>
+
+    <div style="margin-bottom: 30px;">
+        <a href="{{ url_for('create_session') }}" class="btn btn-primary">+ Create New Session</a>
+    </div>
+
+    {% if sessions %}
+        {% for session_id, session in sessions.items() %}
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div style="flex: 1;">
+                        <h3 style="color: #667eea; margin-bottom: 10px;">
+                            {{ session.title | e }}
+                            {% if session.validated %}
+                                <span style="background: #28a745; color: white; padding: 4px 12px;
+                                             border-radius: 15px; font-size: 12px; margin-left: 10px;">
+                                    ✓ Validated
+                                </span>
+                            {% else %}
+                                <span style="background: #ffc107; color: #212529; padding: 4px 12px;
+                                             border-radius: 15px; font-size: 12px; margin-left: 10px;">
+                                    ⏳ Pending
+                                </span>
+                            {% endif %}
+                        </h3>
+                        <p style="color: #666; margin-bottom: 10px;">{{ session.description | e }}</p>
+                        <p style="font-size: 14px; color: #999;">
+                            <strong>Files:</strong> {{ session.files|length }} |
+                            <strong>Created:</strong> {{ session.created_at }}
+                        </p>
+
+                        {% if session.validated %}
+                            <!--
+                            <div style="margin-top: 10px; padding: 10px; background: #d4edda;
+                                        border-radius: 5px; font-size: 14px;">
+                                <strong>Students:</strong> {{ session.student_count }} |
+                                <strong>Password:</strong>
+                                <span id="pwd-{{ session_id }}" style="filter: blur(5px); cursor: pointer; user-select: none;"
+                                      onclick="this.style.filter='none'; this.style.cursor='default';"
+                                      title="Click to reveal">
+                                    <code style="background: white; padding: 2px 6px; border-radius: 3px;">
+                                        {{ session.password }}
+                                    </code>
+                                </span>
+                                <small style="color: #666; margin-left: 10px;">(click to reveal)</small>
+                            </div>
+                            -->
+                        {% endif %}
+                    </div>
+
+                    <div style="display: flex; gap: 10px; flex-direction: column; margin-left: 20px;">
+                        <a href="{{ url_for('edit_session', session_id=session_id) }}"
+                           class="btn btn-primary">Edit</a>
+
+                        {% if not session.validated %}
+                            <button onclick="showValidateForm({{ session_id }})"
+                                    class="btn btn-success">Validate</button>
+                        {% else %}
+                            <form method="POST" action="{{ url_for('invalidate_session', session_id=session_id) }}"
+                                  style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <button type="submit" class="btn btn-warning">Invalidate</button>
+                            </form>
+                        {% endif %}
+
+                        <form method="POST" action="{{ url_for('delete_session', session_id=session_id) }}"
+                              style="display: inline;"
+                              onsubmit="return confirm('Are you sure you want to delete this session?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="validate-form-{{ session_id }}" style="display: none; margin-top: 20px;
+                                                                 padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                    <form method="POST" action="{{ url_for('validate_session', session_id=session_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <label for="student_count_{{ session_id }}">Number of Students (1-1000):</label>
+                            <input type="number" id="student_count_{{ session_id }}"
+                                   name="student_count" min="1" max="1000" required
+                                   style="width: 200px; display: inline-block; margin-right: 10px;">
+                            <button type="submit" class="btn btn-success">Confirm Validation</button>
+                            <button type="button" class="btn btn-secondary"
+                                    onclick="hideValidateForm({{ session_id }})">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="card" style="text-align: center; padding: 40px;">
+            <p style="font-size: 18px; color: #999;">No training sessions created yet.</p>
+            <a href="{{ url_for('create_session') }}" class="btn btn-primary"
+               style="margin-top: 20px;">Create Your First Session</a>
+        </div>
+    {% endif %}
+
+    <script>
+        function showValidateForm(sessionId) {
+            document.getElementById('validate-form-' + sessionId).style.display = 'block';
+        }
+
+        function hideValidateForm(sessionId) {
+            document.getElementById('validate-form-' + sessionId).style.display = 'none';
+        }
+    </script>
+{% endblock %}
