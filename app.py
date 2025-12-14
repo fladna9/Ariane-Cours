@@ -171,10 +171,11 @@ def generate_password():
         words = [line.strip() for line in file.readlines()]
     word1 = secrets.choice(words)
     word2 = secrets.choice(words)
-    number = ''.join(secrets.choice(string.digits) for _ in range(8))
+    number = ''.join(secrets.choice(string.digits) for _ in range(4))
     symbol1 = secrets.choice(['!', '@', '#', '$', '%', '-', '_', '/', '<', '>', ',', '.', '*'])
-    symbol2 = secrets.choice(['!', '@', '#', '$', '%', '-', '_', '/', '<', '>', ',', '.', '*'])
-    return f"{word1}{symbol1}{word2}{symbol2}{number}"
+    #symbol2 = secrets.choice(['!', '@', '#', '$', '%', '-', '_', '/', '<', '>', ',', '.', '*'])
+    #return f"{word1}{symbol1}{word2}{symbol2}{number}"
+    return f"{word1}{symbol1}{word2}{number}"
 
 
 def check_rate_limit(ip_address, max_attempts=5, window=300):
