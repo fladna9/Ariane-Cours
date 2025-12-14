@@ -3,30 +3,33 @@
 {% block title %}Ariane Cours{% endblock %}
 
 {% block content %}
-    <h1>📚 Available Training Sessions</h1>
+    <div class="page-head">
+        <h1 class="page-title">Available Training Sessions</h1>
+        <p class="page-subtitle">Choose a session, then unlock it with the password provided by your instructor.</p>
+    </div>
 
     {% if sessions %}
         <div class="session-grid">
             {% for session_id, session in sessions.items() %}
                 <div class="session-card">
-                    <h2>{{ session.title }}</h2>
-                    <!--<p class="session-description">{{ session.description }}</p>-->
+                    <div class="session-card__top">
+                        <h2 class="session-card__title">{{ session.title }}</h2>
 
-                    <div class="session-meta">
-                        <span>📅 {{ session.created_at }}</span>
-                        {% if session.files %}
-                            <span>📎 {{ session.files|length }} file(s)</span>
-                        {% endif %}
-                    <!--
-                        {% if session.student_count %}
-                            <span>👥 {{ session.student_count }} students</span>
-                        {% endif %}
-                    -->
+                        <div class="session-meta">
+                            <!--<span class="meta-pill">Created: {{ session.created_at }}</span>-->
+                            {% if session.files %}
+                                <span class="meta-pill">{{ session.files|length }} file(s)</span>
+                            {% else %}
+                                <span class="meta-pill meta-pill--muted">No files</span>
+                            {% endif %}
+                        </div>
                     </div>
 
-                    <a href="{{ url_for('session_password', session_id=session_id) }}" class="btn btn-primary">
-                        🔒 Access Session
-                    </a>
+                    <div class="session-card__actions">
+                        <a href="{{ url_for('session_password', session_id=session_id) }}" class="btn btn-primary">
+                            Access session
+                        </a>
+                    </div>
                 </div>
             {% endfor %}
         </div>
