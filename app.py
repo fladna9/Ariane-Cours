@@ -440,8 +440,8 @@ def download_file(session_id, filename):
     """Download a file from a training session - SECURED VERSION"""
     session_data = training_sessions[session_id]
 
-    # Validate and sanitize filename
-    safe_filename = validate_filename(filename)
+    # Validate and sanitize filename with secure_filename
+    safe_filename = secure_filename(filename)
     if not safe_filename:
         abort(400, "Invalid filename")
 
@@ -453,8 +453,8 @@ def download_file(session_id, filename):
     base_dir = os.path.realpath(os.path.join(app.config['UPLOAD_FOLDER'], str(session_id)))
     file_path = os.path.realpath(os.path.join(base_dir, safe_filename))
 
-    # Ensure the file is within the allowed directory
-    if not is_safe_path(base_dir, file_path):
+    # Ensure the file is within the allowed directory (base_dir plus separator)
+    if not file_path.startswith(base_dir + os.sep):
         abort(403, "Access denied")
 
     # Check if file exists
