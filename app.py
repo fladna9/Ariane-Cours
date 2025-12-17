@@ -692,21 +692,21 @@ def delete_file(session_id, filename):
 
     session_data = training_sessions[session_id]
 
-    # Validate and sanitize filename (use werkzeug's secure_filename for robustness)
-    safe_filename = secure_filename(filename)
+    # Validate and sanitize filename
+    safe_filename = validate_filename(filename)
     if not safe_filename:
-        abort(400, "Invalid filename.")
+        abort(400, "Invalid filename")
 
     # Check if filename is in the session's file list
     if safe_filename not in session_data.get('files', []):
         abort(403, "File not associated with this session")
 
-    # Build and normalize the base and target paths
+    # Build and validate the full path
     base_dir = os.path.realpath(os.path.join(app.config['UPLOAD_FOLDER'], str(session_id)))
     file_path = os.path.realpath(os.path.join(base_dir, safe_filename))
 
-    # Ensure the file is within the allowed directory after normalization
-    if not file_path.startswith(base_dir + os.sep):
+    # Ensure the file is within the allowed directory
+    if not is_safe_path(base_dir, file_path):
         abort(403, "Access denied")
 
     # Delete the file
