@@ -816,16 +816,11 @@ def delete_session(session_id):
 
     # Delete session directory
     session_dir = os.path.join(app.config['UPLOAD_FOLDER'], str(session_id))
-    # Validate that session_dir stays within UPLOAD_FOLDER
-    session_dir_abs = os.path.abspath(os.path.normpath(session_dir))
-    upload_folder_abs = os.path.abspath(os.path.normpath(app.config['UPLOAD_FOLDER']))
-    if not session_dir_abs.startswith(upload_folder_abs + os.sep):
-        abort(403, description="Invalid session directory path.")
 
     try:
-        if os.path.exists(session_dir_abs):
+        if os.path.exists(session_dir):
             import shutil
-            shutil.rmtree(session_dir_abs)
+            shutil.rmtree(session_dir)
 
         del training_sessions[session_id]
         save_sessions()
